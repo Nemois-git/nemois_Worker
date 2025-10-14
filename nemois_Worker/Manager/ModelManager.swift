@@ -21,6 +21,7 @@ final class ModelManager: ObservableObject {
     }
     
     @Published var modelState: ModelState = .notLoaded
+    @Published var memoryMode: Bool = false
     private var activeModel: LanguageModelSession?
     
     @MainActor
@@ -78,43 +79,45 @@ final class ModelManager: ObservableObject {
                 }
                 do {
                     let session = activeModel
-                        
-                        // --- 1. 상수 정의 ---
-                        let CONTEXT_LIMIT = 4096 // 모델의 전체 컨텍스트 창 크기
-                        let RESPONSE_BUFFER = 1536 // 모델이 답변을 생성할 수 있도록 남겨둘 최소 토큰 공간
-                        let PROMPT_TOKEN_LIMIT = CONTEXT_LIMIT - RESPONSE_BUFFER // 프롬프트가 차지할 수 있는 최대 토큰
+                    
+                    // --- 1. 상수 정의 ---
+                    let CONTEXT_LIMIT = 4096 // 모델의 전체 컨텍스트 창 크기
+                    let RESPONSE_BUFFER = 1536 // 모델이 답변을 생성할 수 있도록 남겨둘 최소 토큰 공간
+                    let PROMPT_TOKEN_LIMIT = CONTEXT_LIMIT - RESPONSE_BUFFER // 프롬프트가 차지할 수 있는 최대 토큰
 
-                        // --- 2. 간단한 토큰 추정 함수 ---
-                        func estimateTokens(for text: String) -> Int {
-                            return Int(ceil(Double(text.count) / 1.0))
-                        }
+                    // --- 2. 간단한 토큰 추정 함수 ---
+                    func estimateTokens(for text: String) -> Int {
+                        return Int(ceil(Double(text.count) / 1.0))
+                    }
 
-                        // --- 3. 토큰 제한에 맞춰 동적으로 프롬프트 구성 (개선된 로직) ---
-                        var messagesForPrompt: [OpenAIChatMessage] = []
-                        var currentTokens = 0
-
-                        // 가장 최신 메시지를 우선적으로 처리합니다. 이 메시지는 반드시 포함되어야 합니다.
-                        guard let latestMessage = messages.last else {
-                            // 메시지가 없는 경우, 빈 스트림을 시작하고 종료합니다.
-                            // let stream = session.streamResponse(to: "")
-                            continuation.finish()
-                            // 실제로는 이 Task를 바로 return 해야 하지만, 현재 구조상 break 처럼 동작하게 둡니다.
-                            // 이 부분은 함수의 전체 구조를 리팩토링할 때 개선될 수 있습니다.
-                            return
-                        }
-
+                    let stream: LanguageModelSession.ResponseStream<String>?
+                    
+                    var messagesForPrompt: [OpenAIChatMessage] = []
+                    var currentTokens = 0
+                    
+                    // 가장 최신 메시지를 우선적으로 처리합니다. 이 메시지는 반드시 포함되어야 합니다.
+                    guard let latestMessage = messages.last else {
+                        // 메시지가 없는 경우, 빈 스트림을 시작하고 종료합니다.
+                        // let stream = session.streamResponse(to: "")
+                        continuation.finish()
+                        // 실제로는 이 Task를 바로 return 해야 하지만, 현재 구조상 break 처럼 동작하게 둡니다.
+                        // 이 부분은 함수의 전체 구조를 리팩토링할 때 개선될 수 있습니다.
+                        return
+                    }
+                    
+                    if memoryMode {
                         // 현재 요청(가장 최신 메시지)을 프롬프트에 먼저 추가합니다.
                         messagesForPrompt.append(latestMessage)
                         let latestMessageText = "\(latestMessage.role.rawValue): \(latestMessage.content)\n"
                         currentTokens += estimateTokens(for: latestMessageText)
-
+                        
                         // 나머지 과거 대화 기록을 최신 순서(뒤에서부터)로 순회합니다.
                         let historicalMessages = messages.dropLast().reversed()
-
+                        
                         for message in historicalMessages {
                             let messageText = "\(message.role.rawValue): \(message.content)\n"
                             let messageTokens = estimateTokens(for: messageText)
-
+                            
                             // 이 메시지를 추가했을 때 토큰 제한을 넘지 않는 경우에만 포함시킵니다.
                             if currentTokens + messageTokens <= PROMPT_TOKEN_LIMIT {
                                 currentTokens += messageTokens
@@ -125,25 +128,35 @@ final class ModelManager: ObservableObject {
                                 break
                             }
                         }
-
                         // --- 4. 최종 프롬프트를 생성합니다. ---
                         let prompt = messagesForPrompt.map { "\($0.role.rawValue): \($0.content)" }.joined(separator: "\n")
                         
                         LogStore.shared.add(log: "Prompt created with \(messagesForPrompt.count) messages, ensuring latest request. Estimated tokens: \(currentTokens).")
-
-                        let stream = session.streamResponse(to: prompt)
                         
-                        // --- 5. 스트림 응답 처리 (델타 계산) ---
-                        var lastResponse = ""
-                        for try await partialResponse in stream {
-                            let fullResponse = partialResponse.content
-                            let delta = fullResponse.dropFirst(lastResponse.count)
-                            
-                            if !delta.isEmpty {
-                                continuation.yield(String(delta))
-                                lastResponse = fullResponse
-                            }
+                        stream = session.streamResponse(to: prompt)
+                    } else {
+                        messagesForPrompt.append(latestMessage)
+                        let prompt = messagesForPrompt.map { "\($0.role.rawValue): \($0.content)" }.joined(separator: "\n")
+                        
+                        stream = session.streamResponse(to: prompt)
+                    }
+
+                    guard let safe_stream = stream else {
+                        continuation.finish(throwing: ModelError.outputProcessingError)
+                        return
+                    }
+                    
+                    // --- 5. 스트림 응답 처리 (델타 계산) ---
+                    var lastResponse = ""
+                    for try await partialResponse in safe_stream {
+                        let fullResponse = partialResponse.content
+                        let delta = fullResponse.dropFirst(lastResponse.count)
+                        
+                        if !delta.isEmpty {
+                            continuation.yield(String(delta))
+                            lastResponse = fullResponse
                         }
+                    }
                     continuation.finish()
                 } catch {
                     continuation.finish(throwing: error)

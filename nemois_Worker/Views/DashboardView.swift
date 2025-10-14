@@ -50,27 +50,39 @@ struct DashboardView: View {
     /// 모델 제어 UI
     private var modelControlSection: some View {
         VStack(alignment: .leading, spacing: 15) {
-            Text("Model Control")
-                .font(.title2).fontWeight(.bold).padding(.horizontal)
-            
-            HStack {
-                modelStatusView
-                Spacer()
-                Toggle("Load Model", isOn: Binding(
-                    get: { modelManager.isModelLoaded },
-                    set: { shouldBeLoaded in
-                        if shouldBeLoaded {
-                            Task { modelManager.loadModel() }
-                        } else {
-                            modelManager.unloadModel() // 이 함수는 동기 함수이므로 await이 필요 없습니다.
+
+            VStack(alignment: .leading, spacing: 15)  {
+                Text("Model Control")
+                    .font(.title2).fontWeight(.bold).padding(.horizontal)
+                HStack {
+                    modelStatusView
+                    Spacer()
+                    Toggle("Load Model", isOn: Binding(
+                        get: { modelManager.isModelLoaded },
+                        set: { shouldBeLoaded in
+                            if shouldBeLoaded {
+                                Task { modelManager.loadModel() }
+                            } else {
+                                modelManager.unloadModel() // 이 함수는 동기 함수이므로 await이 필요 없습니다.
+                            }
                         }
-                    }
-                ))
-                .labelsHidden()
-                .disabled(modelManager.modelState.isLoading || serverManager.serverState.isStartingOrRunning)
+                    ))
+                    .labelsHidden()
+                    .disabled(modelManager.modelState.isLoading || serverManager.serverState.isStartingOrRunning)
+                }
+                .padding(.horizontal)
+                Divider().padding(.vertical)
+                Text("Toggle Memory")
+                    .font(.title2).fontWeight(.bold).padding(.horizontal)
+                HStack {
+                    memoryToggleView
+                    Spacer()
+                    Toggle("Toggle memory(Very limited)", isOn: $modelManager.memoryMode)
+                        .labelsHidden()
+                        .disabled(modelManager.modelState.isLoading || serverManager.serverState.isStartingOrRunning)
+                }
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
-            
             if case .error(let errorMessage) = modelManager.modelState {
                 Text(errorMessage).font(.caption).foregroundColor(.red).padding(.horizontal)
             }
@@ -133,6 +145,16 @@ struct DashboardView: View {
             case .starting: ProgressView().scaleEffect(0.8); Text("Starting...")
             case .running: Image(systemName: "checkmark.circle.fill").foregroundColor(.green); Text("Running")
             case .error: Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.red); Text("Error")
+            }
+        }
+    }
+    
+    /// Memory function UI
+    @ViewBuilder private var memoryToggleView: some View {
+        HStack {
+            switch modelManager.memoryMode {
+            case false: Image(systemName: "xmark.circle.fill").foregroundColor(.gray); Text("Stopped")
+            case true: Image(systemName: "checkmark.circle.fill").foregroundColor(.green); Text("Running")
             }
         }
     }
