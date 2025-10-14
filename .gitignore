@@ -1,0 +1,65 @@
+#==================================================================
+# General Xcode
+#==================================================================
+build/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM/
+*.xcscheme
+*.xcworkspace
+
+#==================================================================
+# User-specific files
+#==================================================================
+xcuserdata/
+*.xccheckout
+*.moved-aside
+*.xcuserstate
+*.xcscmblueprint
+
+#==================================================================
+# Swift Package Manager
+#==================================================================
+.build/
+Packages/
+*.resolved
+Package.resolved
+
+#==================================================================
+# macOS & System Files
+#==================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+#==================================================================
+# Project-specific temp files (optional but recommended)
+#==================================================================
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/xcuserdata/*
+
+#==================================================================
+# Secrets and Environment variables
+#==================================================================
+# Usually you have a template file checked in, but not the actual secrets.
+# For example: .env.example is in git, but .env is ignored.
+.env
+
+#==================================================================
+# Dependency Managers (CocoaPods, Carthage)
+#==================================================================
+# Add these if you use them.
+#
+# CocoaPods
+# Pods/
+# Podfile.lock
+#
+# Carthage
+# Carthage/
+# Cartfile.resolved
