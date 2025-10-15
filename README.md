@@ -2,6 +2,18 @@
 
 **nemois Local LLM Studio** is a universal app for iOS and macOS designed for developers and advanced users. This application allows you to run AI models directly on your own devices and expose an OpenAI-compatible API on your local network. Since the entire process runs exclusively on your device, it ensures a high level of privacy and data security.
 
+## ⚠️ Limitations
+
+Since this app uses Apple's FoundationModel, it requires Apple Intelligence capatible device.
+
+This app utilizes Apple's built-in Foundation Models. Currently, these models have a relatively small **4096-token context window**.
+
+This limits the amount of conversation that can be processed at one time, making it less suitable for tasks that require understanding long contexts, such as summarizing lengthy documents. The app is primarily optimized for short and simple question-answering tasks.
+
+## ⚠️ Development Notes
+A significant portion of this project was developed with the assistance of Google's Gemini. This process also serves as an experiment to explore the possibilities of rapid prototyping and development leveraging AI.
+Therefore, there may be various undiscovered bugs, and some features might not work as expected. Bug reports and feature suggestions are always welcome.
+
 ## ✨ Key Features
 
 - **Universal App:** Flawlessly supports both iOS and macOS with a single codebase.
