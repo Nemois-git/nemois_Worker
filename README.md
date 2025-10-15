@@ -1,13 +1,13 @@
-# Nemois Local LLM Studio
+# nemois Local LLM Studio
 
-**Nemois Local LLM Studio** is a universal app for iOS and macOS designed for developers and advanced users. This application allows you to run AI models directly on your own devices and expose an OpenAI-compatible API on your local network. Since the entire process runs exclusively on your device, it ensures a high level of privacy and data security.
+**nemois Local LLM Studio** is a universal app for iOS and macOS designed for developers and advanced users. This application allows you to run AI models directly on your own devices and expose an OpenAI-compatible API on your local network. Since the entire process runs exclusively on your device, it ensures a high level of privacy and data security.
 
 ## ✨ Key Features
 
 - **Universal App:** Flawlessly supports both iOS and macOS with a single codebase.
 - **Local API Server:** A built-in lightweight web server (Vapor) provides an OpenAI-compatible `/v1/chat/completions` endpoint on your local network.
 - **Built-in Foundation Model:** Instantly use the OS's built-in models through Apple's `FoundationModel` framework.
-- **Real-time Resource Monitoring:** Check system resources like CPU and memory usage in real-time from the app's dashboard (currently using simulated data).
+- **Real-time Resource Monitoring:** Check system resources like CPU and memory usage in real-time from the app's dashboard.
 - **Modern UI with SwiftUI:** Built with SwiftUI for a smooth and responsive user experience.
 
 ## 🚀 Getting Started
@@ -19,7 +19,7 @@
 
 ### Setup and Run
 
-1.  Open the `nemois_Worker.xcodeproj` file in Xcode. Xcode will automatically download the `Vapor` dependency specified in the `Package.swift` file.
+1.  Open the `nemois_Worker.xcodeproj` file in Xcode. Xcode will automatically download the `Vapor` dependency.
 2.  Build and run the app (`Cmd + R`).
 3.  **Start the Server:**
     - Navigate to the `Dashboard` tab.
